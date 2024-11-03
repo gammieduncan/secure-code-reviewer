@@ -47,8 +47,8 @@ Format your response as a JSON array of review comments. Each comment should hav
 
 Example:
 [
-    {"path": "src/main.py", "line": 45, "body": "Consider using a list comprehension here for better performance"},
-    {"path": null, "line": null, "body": "Overall, the PR implements the feature well but could use some optimization"}
+    {{"path": "src/main.py", "line": 45, "body": "Consider using a list comprehension here for better performance"}},
+    {{"path": null, "line": null, "body": "Overall, the PR implements the feature well but could use some optimization"}}
 ]"""
 
 def get_claude_review(bedrock_client, prompt):
