@@ -89,7 +89,7 @@ def get_claude_review(bedrock_client, prompt, max_retries=5, initial_backoff=1):
                     time.sleep(backoff_time)
                     continue
                 else:
-                    print(f"Unexpected error during invoke_model: {str(e)}")
+                    print(f"Unexpected err during invoke_model: {str(e)}")
                     raise
             
             print("Parsing response...")
