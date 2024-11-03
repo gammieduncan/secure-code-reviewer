@@ -63,19 +63,24 @@ def get_claude_review(bedrock_client, prompt, max_retries=5, initial_backoff=1):
             body = json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
                 "max_tokens": 4096,
+                "temperature": 0.7,
                 "messages": [
                     {
                         "role": "user",
-                        "content": prompt
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": prompt
+                            }
+                        ]
                     }
-                ],
-                "temperature": 0.7
+                ]
             })
             
             print("Invoking Claude model...")
             try:
                 response = bedrock_client.invoke_model(
-                    modelId='anthropic.claude-3-5-sonnet-20240620-v1:0',
+                    modelId='anthropic.claude-3.5-sonnet-20240320-v1:0',
                     body=body
                 )
             except Exception as e:
@@ -89,19 +94,21 @@ def get_claude_review(bedrock_client, prompt, max_retries=5, initial_backoff=1):
                     time.sleep(backoff_time)
                     continue
                 else:
-                    print(f"Unexpected err during invoke_model: {str(e)}")
+                    print(f"Unexpected error during invoke_model: {str(e)}")
                     raise
             
             print("Parsing response...")
             response_body = json.loads(response['body'].read())
             try:
-                review_comments = json.loads(response_body['messages'][0]['content'])
+                # Updated to match new response format
+                response_text = response_body['content'][0]['text']
+                review_comments = json.loads(response_text)
                 print(f"Successfully parsed {len(review_comments)} review comments")
                 return review_comments
             except json.JSONDecodeError as e:
                 print(f"Failed to parse response as JSON: {e}")
-                print(f"Raw response content: {response_body['messages'][0]['content'][:200]}...")
-                return [{"path": None, "line": None, "body": response_body['messages'][0]['content']}]
+                print(f"Raw response content: {response_text[:200]}...")
+                return [{"path": None, "line": None, "body": response_text}]
                 
         except Exception as e:
             print(f"Unexpected error during attempt {attempt + 1}: {str(e)}")
