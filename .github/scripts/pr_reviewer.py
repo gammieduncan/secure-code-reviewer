@@ -19,7 +19,8 @@ def get_pr_details(github_token, repo_name, pr_number):
     pr = repo.get_pull(pr_number)
     
     # Get PR description and diff
-    diff = pr.get_diff().decode('utf-8')
+    files = pr.get_files()
+    diff = "\n".join([f"File: {file.filename}\n{file.patch}" for file in files if file.patch])
     description = pr.title + "\n" + (pr.body or "")
     
     return pr, diff, description
