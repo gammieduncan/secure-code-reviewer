@@ -80,7 +80,7 @@ def get_claude_review(bedrock_client, prompt, max_retries=5, initial_backoff=1):
             print("Invoking Claude model...")
             try:
                 response = bedrock_client.invoke_model(
-                    modelId='anthropic.claude-3-sonnet-20240620-v1:0',
+                    modelId='anthropic.claude-3-sonnet-20240229-v1:0',
                     body=body
                 )
             except Exception as e:
