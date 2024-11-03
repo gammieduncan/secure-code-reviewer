@@ -91,6 +91,25 @@ def get_claude_review(bedrock_client, prompt, max_retries=5, initial_backoff=1):
                 else:
                     print(f"Unexpected error during invoke_model: {str(e)}")
                     raise
+            
+            print("Parsing response...")
+            response_body = json.loads(response['body'].read())
+            try:
+                review_comments = json.loads(response_body['messages'][0]['content'])
+                print(f"Successfully parsed {len(review_comments)} review comments")
+                return review_comments
+            except json.JSONDecodeError as e:
+                print(f"Failed to parse response as JSON: {e}")
+                print(f"Raw response content: {response_body['messages'][0]['content'][:200]}...")
+                return [{"path": None, "line": None, "body": response_body['messages'][0]['content']}]
+                
+        except Exception as e:
+            print(f"Unexpected error during attempt {attempt + 1}: {str(e)}")
+            if attempt == max_retries - 1:
+                raise
+            continue
+    
+    return None  # In case all retries fail
 
 def main():
     # Get environment variables
