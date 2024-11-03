@@ -3,11 +3,12 @@ import boto3
 import json
 import time
 import random
+import sys
 from github import Github
 from botocore.config import Config
-from botocore.exceptions import ThrottlingException
 
 def get_bedrock_client():
+    print("Initializing Bedrock client...")
     config = Config(
         region_name=os.environ["AWS_REGION"]
     )
@@ -72,32 +73,24 @@ def get_claude_review(bedrock_client, prompt, max_retries=5, initial_backoff=1):
             })
             
             print("Invoking Claude model...")
-            response = bedrock_client.invoke_model(
-                modelId='anthropic.claude-3-5-sonnet-20240620-v1:0',
-                body=body
-            )
-            
-            print("Parsing response...")
-            response_body = json.loads(response['body'].read())
             try:
-                review_comments = json.loads(response_body['messages'][0]['content'])
-                print(f"Successfully parsed {len(review_comments)} review comments")
-                return review_comments
-            except json.JSONDecodeError as e:
-                print(f"Failed to parse response as JSON: {e}")
-                print(f"Raw response content: {response_body['messages'][0]['content'][:200]}...")
-                return [{"path": None, "line": None, "body": response_body['messages'][0]['content']}]
-                
-        except ThrottlingException as e:
-            if attempt == max_retries - 1:
-                print(f"Failed after {max_retries} attempts due to throttling")
-                raise  # Re-raise the exception if we've exhausted all retries
-            
-            # Calculate exponential backoff with jitter
-            backoff_time = initial_backoff * (2 ** attempt) + random.uniform(0, 1)
-            print(f"Request throttled. Waiting {backoff_time:.2f} seconds before retry...")
-            time.sleep(backoff_time)
-            continue
+                response = bedrock_client.invoke_model(
+                    modelId='anthropic.claude-3-5-sonnet-20240620-v1:0',
+                    body=body
+                )
+            except Exception as e:
+                if 'ThrottlingException' in str(e):
+                    if attempt == max_retries - 1:
+                        print(f"Failed after {max_retries} attempts due to throttling")
+                        raise
+                    
+                    backoff_time = initial_backoff * (2 ** attempt) + random.uniform(0, 1)
+                    print(f"Request throttled. Waiting {backoff_time:.2f} seconds before retry...")
+                    time.sleep(backoff_time)
+                    continue
+                else:
+                    print(f"Unexpected error during invoke_model: {str(e)}")
+                    raise
 
 def main():
     # Get environment variables
